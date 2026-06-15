@@ -32,6 +32,7 @@ function TextInput({
   defaultValue,
   min,
   max,
+  step,
 }: {
   label: string;
   name: string;
@@ -39,6 +40,7 @@ function TextInput({
   defaultValue: string | number;
   min?: number;
   max?: number;
+  step?: number | string;
 }) {
   const id = `${name}-${label}`;
 
@@ -51,6 +53,7 @@ function TextInput({
         type={type}
         min={min}
         max={max}
+        step={step}
         defaultValue={defaultValue}
       />
     </div>
@@ -351,6 +354,7 @@ export function PurchaseSheet({
               name="unitPrice"
               type="number"
               min={0}
+              step="any"
               defaultValue={initialValue.unitPrice}
             />
             <TextInput
@@ -358,6 +362,7 @@ export function PurchaseSheet({
               name="shippingFee"
               type="number"
               min={0}
+              step="any"
               defaultValue={initialValue.shippingFee}
             />
             <TextInput
@@ -365,6 +370,7 @@ export function PurchaseSheet({
               name="taxFee"
               type="number"
               min={0}
+              step="any"
               defaultValue={initialValue.taxFee}
             />
             <TextInput
@@ -372,6 +378,7 @@ export function PurchaseSheet({
               name="extraFee"
               type="number"
               min={0}
+              step="any"
               defaultValue={initialValue.extraFee}
             />
             <SelectInput
@@ -507,6 +514,7 @@ export function SaleSheet({
               name="unitSalePrice"
               type="number"
               min={0}
+              step="any"
               defaultValue={editingSale?.unitSalePrice ?? 0}
             />
             <TextInput
@@ -514,6 +522,7 @@ export function SaleSheet({
               name="shippingFee"
               type="number"
               min={0}
+              step="any"
               defaultValue={editingSale?.shippingFee ?? 0}
             />
             <TextInput
@@ -521,6 +530,7 @@ export function SaleSheet({
               name="platformFee"
               type="number"
               min={0}
+              step="any"
               defaultValue={editingSale?.platformFee ?? 0}
             />
             <MarketplaceInput

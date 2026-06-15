@@ -204,6 +204,54 @@ describe("TradesView", () => {
     });
   });
 
+  it("allows decimal foreign-currency purchase amounts", async () => {
+    const store = arrangeStore({ purchases: [] });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          usd: {
+            krw: 1555.55,
+          },
+        }),
+      }),
+    );
+
+    render(<TradesView />);
+
+    fireEvent.click(screen.getByRole("button", { name: "구매 추가" }));
+    const unitPriceInput = screen.getByLabelText("개당 구매가");
+    const shippingFeeInput = screen.getByLabelText("배송비");
+
+    expect(unitPriceInput).toHaveAttribute("step", "any");
+    expect(shippingFeeInput).toHaveAttribute("step", "any");
+
+    fireEvent.change(screen.getByLabelText("상품명"), {
+      target: { value: "Pikachu Promo Card" },
+    });
+    fireEvent.change(screen.getByLabelText("개당 구매가"), {
+      target: { value: "90.5" },
+    });
+    fireEvent.change(screen.getByLabelText("배송비"), {
+      target: { value: "4.25" },
+    });
+    fireEvent.change(screen.getByLabelText("통화"), {
+      target: { value: "USD" },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: "구매 등록 폼" }));
+
+    await waitFor(() => {
+      expect(store.addPurchase).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currency: "USD",
+          shippingFee: 4.25,
+          unitPrice: 90.5,
+        }),
+      );
+    });
+  });
+
   it("renders ledger entries on the dedicated timeline view", () => {
     arrangeStore({ sales: [baseSale] });
 

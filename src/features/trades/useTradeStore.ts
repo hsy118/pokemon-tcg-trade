@@ -47,13 +47,14 @@ export type SaleInput = Omit<Sale, "id" | "createdAt" | "updatedAt">;
 
 export function useTradeStore() {
   const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [state, setState] = useState<TradeState>(emptyState);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setState(emptyState);
       setIsHydrated(true);
       return;
@@ -112,7 +113,7 @@ export function useTradeStore() {
     return () => {
       isCurrent = false;
     };
-  }, [user]);
+  }, [userId]);
 
   const addPurchase = async (input: PurchaseInput) => {
     setIsMutating(true);
