@@ -23,6 +23,20 @@ const emptyState: TradeState = {
   sales: [],
 };
 
+function isMissingExchangeRateColumn(error: { message?: string } | null) {
+  return Boolean(
+    error?.message?.includes("exchange_rate_krw") ||
+      error?.message?.includes("schema cache"),
+  );
+}
+
+function omitExchangeRateColumn<T extends { exchange_rate_krw?: number | null }>(payload: T) {
+  const legacyPayload = { ...payload };
+  delete legacyPayload.exchange_rate_krw;
+
+  return legacyPayload;
+}
+
 export type PurchaseInput = Omit<
   Purchase,
   "id" | "remainingQuantity" | "createdAt" | "updatedAt"
@@ -99,13 +113,24 @@ export function useTradeStore() {
     setIsMutating(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
+    const payload = mapPurchaseInput(input);
+    let insertResult = await supabase
       .from("purchases")
-      .insert(mapPurchaseInput(input))
+      .insert(payload)
       .select()
       .single();
 
+    if (isMissingExchangeRateColumn(insertResult.error)) {
+      insertResult = await supabase
+        .from("purchases")
+        .insert(omitExchangeRateColumn(payload))
+        .select()
+        .single();
+    }
+
     setIsMutating(false);
+
+    const { data, error: insertError } = insertResult;
 
     if (insertError) {
       setError("구매 기록을 저장하지 못했습니다.");
@@ -173,14 +198,26 @@ export function useTradeStore() {
     setIsMutating(true);
     setError(null);
 
-    const { data, error: updateError } = await supabase
+    const payload = mapPurchaseUpdate(input);
+    let updateResult = await supabase
       .from("purchases")
-      .update(mapPurchaseUpdate(input))
+      .update(payload)
       .eq("id", purchaseId)
       .select()
       .single();
 
+    if (isMissingExchangeRateColumn(updateResult.error)) {
+      updateResult = await supabase
+        .from("purchases")
+        .update(omitExchangeRateColumn(payload))
+        .eq("id", purchaseId)
+        .select()
+        .single();
+    }
+
     setIsMutating(false);
+
+    const { data, error: updateError } = updateResult;
 
     if (updateError) {
       setError("구매 기록을 수정하지 못했습니다.");
