@@ -1,4 +1,4 @@
-import type { Currency } from "./types";
+import type { Currency, Purchase } from "./types";
 
 type CurrencyApiResponse = Record<string, Record<string, number | undefined> | undefined>;
 
@@ -27,4 +27,32 @@ export async function fetchExchangeRateToKrw(currency: Currency, date: string) {
   }
 
   return rate;
+}
+
+export async function enrichMissingPurchaseExchangeRates(purchases: Purchase[]) {
+  const rateCache = new Map<string, number>();
+
+  return Promise.all(
+    purchases.map(async (purchase) => {
+      if (purchase.currency === "KRW" || purchase.exchangeRateKrw) {
+        return purchase;
+      }
+
+      const cacheKey = `${purchase.currency}-${purchase.purchaseDate}`;
+
+      try {
+        const exchangeRateKrw =
+          rateCache.get(cacheKey) ??
+          (await fetchExchangeRateToKrw(purchase.currency, purchase.purchaseDate));
+        rateCache.set(cacheKey, exchangeRateKrw);
+
+        return {
+          ...purchase,
+          exchangeRateKrw,
+        };
+      } catch {
+        return purchase;
+      }
+    }),
+  );
 }

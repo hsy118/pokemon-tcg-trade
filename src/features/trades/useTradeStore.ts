@@ -11,6 +11,7 @@ import {
   mapSaleRow,
   mapSaleUpdate,
 } from "./supabaseMappers";
+import { enrichMissingPurchaseExchangeRates } from "./exchangeRates";
 import type { Purchase, Sale } from "./types";
 
 type TradeState = {
@@ -85,8 +86,12 @@ export function useTradeStore() {
         setError("거래 데이터를 불러오지 못했습니다.");
         setState(emptyState);
       } else {
+        const purchases = await enrichMissingPurchaseExchangeRates(
+          purchasesResult.data.map(mapPurchaseRow),
+        );
+
         setState({
-          purchases: purchasesResult.data.map(mapPurchaseRow),
+          purchases,
           sales: salesResult.data.map(mapSaleRow),
         });
       }
