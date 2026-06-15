@@ -25,6 +25,7 @@ const basePurchase: Purchase = {
   taxFee: 6_000,
   extraFee: 0,
   currency: "KRW",
+  exchangeRateKrw: null,
   marketplace: "포켓몬센터",
   memo: "포켓몬센터 아님",
   createdAt: "2026-06-14T00:00:00.000Z",
@@ -71,6 +72,32 @@ describe("trade calculations", () => {
       netProfit: 30_000,
       profitRate: 15.96,
       holdingDays: 36,
+    });
+  });
+
+  it("calculates foreign purchase acquisition cost in KRW for sale profit", () => {
+    const usdPurchase: Purchase = {
+      ...basePurchase,
+      currency: "USD",
+      exchangeRateKrw: 1555.55,
+      unitPrice: 90,
+      shippingFee: 10,
+      taxFee: 0,
+      quantity: 1,
+      remainingQuantity: 1,
+    };
+    const sale: Sale = {
+      ...baseSale,
+      quantity: 1,
+      unitSalePrice: 180_000,
+      shippingFee: 0,
+      platformFee: 0,
+    };
+
+    expect(calculateSaleResult(sale, usdPurchase)).toMatchObject({
+      acquisitionCost: 155_555,
+      netProfit: 24_445,
+      profitRate: 15.71,
     });
   });
 
@@ -151,6 +178,7 @@ describe("trade calculations", () => {
         quantity: 1,
         amount: 218_000,
         currency: "KRW",
+        exchangeRateKrw: null,
         profit: 30_000,
         memo: "번개장터 판매",
       },
@@ -163,6 +191,7 @@ describe("trade calculations", () => {
         quantity: 2,
         amount: 376_000,
         currency: "KRW",
+        exchangeRateKrw: null,
         profit: null,
         memo: "포켓몬센터 아님",
       },
@@ -173,6 +202,7 @@ describe("trade calculations", () => {
     const usdPurchase: Purchase = {
       ...basePurchase,
       currency: "USD",
+      exchangeRateKrw: 1555.55,
       unitPrice: 120,
       shippingFee: 10,
       taxFee: 0,
@@ -182,6 +212,7 @@ describe("trade calculations", () => {
       expect.objectContaining({
         amount: 250,
         currency: "USD",
+        exchangeRateKrw: 1555.55,
       }),
     ]);
   });

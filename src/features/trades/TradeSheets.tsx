@@ -9,7 +9,11 @@ import {
   SALE_MARKETPLACES,
 } from "./constants";
 import { calculatePurchaseCosts } from "./calculations";
-import { formatCurrency, formatNumber, toDateInputValue } from "./formatters";
+import {
+  formatCurrencyWithKrw,
+  formatNumber,
+  toDateInputValue,
+} from "./formatters";
 import {
   CUSTOM_MARKETPLACE_OPTION,
   getMarketplaceCustomValue,
@@ -247,7 +251,11 @@ function SalePurchasePicker({
                   </span>
                   <span>
                     보유 {formatNumber(available)}개 · 원가{" "}
-                    {formatCurrency(cost, purchase.currency)}
+                    {formatCurrencyWithKrw(
+                      cost,
+                      purchase.currency,
+                      purchase.exchangeRateKrw,
+                    )}
                   </span>
                 </button>
               );
@@ -384,8 +392,22 @@ export function PurchaseSheet({
           </div>
           <div className="sheet-summary">
             <ClipboardList aria-hidden="true" size={19} />
-            <span>총 매입 원가 {formatCurrency(costs.totalAcquisitionCost, initialValue.currency)}</span>
-            <strong>개당 {formatCurrency(costs.effectiveUnitCost, initialValue.currency)}</strong>
+            <span>
+              총 매입 원가{" "}
+              {formatCurrencyWithKrw(
+                costs.totalAcquisitionCost,
+                initialValue.currency,
+                initialValue.exchangeRateKrw,
+              )}
+            </span>
+            <strong>
+              개당{" "}
+              {formatCurrencyWithKrw(
+                costs.effectiveUnitCost,
+                initialValue.currency,
+                initialValue.exchangeRateKrw,
+              )}
+            </strong>
           </div>
           <div className="sheet__footer">
             <button className="button button--ghost" type="button" onClick={onClose}>
@@ -514,7 +536,14 @@ export function SaleSheet({
           <div className="sheet-summary">
             <ClipboardList aria-hidden="true" size={19} />
             <span>선택 상품 보유 가능 수량 {formatNumber(availableQuantity)}개</span>
-            <strong>원가 {formatCurrency(unitCost, selectedPurchase?.currency)}</strong>
+            <strong>
+              원가{" "}
+              {formatCurrencyWithKrw(
+                unitCost,
+                selectedPurchase?.currency,
+                selectedPurchase?.exchangeRateKrw,
+              )}
+            </strong>
           </div>
           <div className="sheet__footer">
             <button className="button button--ghost" type="button" onClick={onClose}>

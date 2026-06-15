@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { CATEGORIES, LANGUAGES } from "./constants";
-import { formatCurrency, formatNumber } from "./formatters";
+import { formatCurrency, formatCurrencyWithKrw, formatNumber } from "./formatters";
 import type { Category, InventoryItem, Language, TradeLedgerItem } from "./types";
 
 export type InventorySort = "holdingDaysDesc" | "costDesc" | "costAsc";
@@ -240,7 +240,14 @@ export function InventoryCard({
         </span>
         <span>
           <Coins aria-hidden="true" size={17} />
-          개당 원가 <strong>{formatCurrency(item.effectiveUnitCost, item.currency)}</strong>
+          개당 원가{" "}
+          <strong>
+            {formatCurrencyWithKrw(
+              item.effectiveUnitCost,
+              item.currency,
+              item.exchangeRateKrw,
+            )}
+          </strong>
         </span>
         <span>
           <CalendarDays aria-hidden="true" size={17} />
@@ -249,7 +256,9 @@ export function InventoryCard({
       </div>
       <div className="inventory-card__cost">
         <span>남은 원가</span>
-        <strong>{formatCurrency(item.remainingCost, item.currency)}</strong>
+        <strong>
+          {formatCurrencyWithKrw(item.remainingCost, item.currency, item.exchangeRateKrw)}
+        </strong>
       </div>
       <div className="card-actions">
         <button
@@ -304,7 +313,7 @@ export function LedgerCard({
         <h3>{item.productName}</h3>
         <p>
           {item.language} · {formatNumber(item.quantity)}개 ·{" "}
-          {formatCurrency(item.amount, item.currency)}
+          {formatCurrencyWithKrw(item.amount, item.currency, item.exchangeRateKrw)}
         </p>
         {item.profit !== null ? (
           <strong className={item.profit >= 0 ? "profit-positive" : "profit-negative"}>

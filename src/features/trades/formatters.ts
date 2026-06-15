@@ -8,6 +8,20 @@ export const formatCurrency = (value: number, currency: Currency = "KRW") =>
     currency,
   }).format(value);
 
+export const formatCurrencyWithKrw = (
+  value: number,
+  currency: Currency = "KRW",
+  exchangeRateKrw?: number | null,
+) => {
+  const formattedAmount = formatCurrency(value, currency);
+
+  if (currency === "KRW" || !exchangeRateKrw) {
+    return formattedAmount;
+  }
+
+  return `${formattedAmount} (${formatCurrency(value * exchangeRateKrw)})`;
+};
+
 export const formatNumber = (value: number) =>
   new Intl.NumberFormat("ko-KR", {
     maximumFractionDigits: 0,

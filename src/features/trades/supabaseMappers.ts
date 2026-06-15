@@ -23,6 +23,10 @@ export function mapPurchaseRow(row: PurchaseRow): Purchase {
     taxFee: Number(row.tax_fee),
     extraFee: Number(row.extra_fee),
     currency: row.currency as Currency,
+    exchangeRateKrw:
+      row.exchange_rate_krw === null || row.exchange_rate_krw === undefined
+        ? null
+        : Number(row.exchange_rate_krw),
     marketplace: row.marketplace,
     memo: row.memo,
     createdAt: row.created_at,
@@ -42,6 +46,7 @@ export function mapPurchaseInput(input: PurchaseInput): PurchaseInsert {
     tax_fee: input.taxFee,
     extra_fee: input.extraFee,
     currency: input.currency,
+    exchange_rate_krw: input.exchangeRateKrw,
     marketplace: input.marketplace,
     memo: input.memo,
   };

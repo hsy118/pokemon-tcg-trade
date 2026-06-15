@@ -25,6 +25,7 @@ export type Purchase = {
   taxFee: number;
   extraFee: number;
   currency: Currency;
+  exchangeRateKrw: number | null;
   marketplace: string;
   memo: string;
   createdAt: string;
@@ -77,6 +78,7 @@ export type TradeLedgerItem = {
   quantity: number;
   amount: number;
   currency: Currency;
+  exchangeRateKrw: number | null;
   profit: number | null;
   memo: string;
 };

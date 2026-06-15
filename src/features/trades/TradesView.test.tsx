@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeTimelineView } from "./TradeTimelineView";
 import { TradesView } from "./TradesView";
 import type { Purchase, Sale } from "./types";
@@ -24,6 +24,7 @@ const basePurchase: Purchase = {
   taxFee: 6_000,
   extraFee: 0,
   currency: "KRW",
+  exchangeRateKrw: null,
   marketplace: "포켓몬센터",
   memo: "컬렉션 보관용",
   createdAt: "2026-06-14T00:00:00.000Z",
@@ -54,25 +55,35 @@ function arrangeStore({
   purchases?: Purchase[];
   sales?: Sale[];
 } = {}) {
-  mockUseTradeStore.mockReturnValue({
-    purchases,
-    sales,
-    isHydrated: true,
-    isMutating: false,
-    error: null,
+  const store = {
     addPurchase: vi.fn(),
     addSale: vi.fn(),
     updatePurchase: vi.fn(),
     updateSale: vi.fn(),
     deletePurchase: vi.fn(),
     deleteSale: vi.fn(),
+  };
+
+  mockUseTradeStore.mockReturnValue({
+    purchases,
+    sales,
+    isHydrated: true,
+    isMutating: false,
+    error: null,
+    ...store,
   });
+
+  return store;
 }
 
 describe("TradesView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     arrangeStore();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("renders the Cardfolio inventory hub with three-up inventory cards", () => {
@@ -115,6 +126,7 @@ describe("TradesView", () => {
           shippingFee: 0,
           taxFee: 0,
           currency: "USD",
+          exchangeRateKrw: 1555.55,
           marketplace: "이베이",
         },
       ],
@@ -136,7 +148,7 @@ describe("TradesView", () => {
 
     expect(screen.getByDisplayValue("purchase-2")).toBeInTheDocument();
     expect(screen.getByText("선택 상품 보유 가능 수량 3개")).toBeInTheDocument();
-    expect(screen.getByText("원가 $120")).toBeInTheDocument();
+    expect(screen.getByText("원가 $120 (₩186,666)")).toBeInTheDocument();
   });
 
   it("shows inline form errors instead of browser alerts", () => {
@@ -147,6 +159,49 @@ describe("TradesView", () => {
     fireEvent.submit(screen.getByRole("form", { name: "구매 등록 폼" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("상품명과 구매 수량을 확인해 주세요.");
+  });
+
+  it("stores the purchase-date KRW exchange rate when adding a USD purchase", async () => {
+    const store = arrangeStore({ purchases: [] });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          usd: {
+            krw: 1555.55,
+          },
+        }),
+      }),
+    );
+
+    render(<TradesView />);
+
+    fireEvent.click(screen.getByRole("button", { name: "구매 추가" }));
+    fireEvent.change(screen.getByLabelText("상품명"), {
+      target: { value: "Pikachu Promo Card" },
+    });
+    fireEvent.change(screen.getByLabelText("구매일"), {
+      target: { value: "2026-06-14" },
+    });
+    fireEvent.change(screen.getByLabelText("개당 구매가"), {
+      target: { value: "90" },
+    });
+    fireEvent.change(screen.getByLabelText("통화"), {
+      target: { value: "USD" },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: "구매 등록 폼" }));
+
+    await waitFor(() => {
+      expect(store.addPurchase).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currency: "USD",
+          exchangeRateKrw: 1555.55,
+          purchaseDate: "2026-06-14",
+          unitPrice: 90,
+        }),
+      );
+    });
   });
 
   it("renders ledger entries on the dedicated timeline view", () => {

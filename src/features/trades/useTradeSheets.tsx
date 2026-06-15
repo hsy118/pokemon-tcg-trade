@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useMemo, useState } from "react";
+import { fetchExchangeRateToKrw } from "./exchangeRates";
 import { toDateInputValue } from "./formatters";
 import { validateMarketplace } from "./marketplace";
 import { PurchaseSheet, SaleSheet } from "./TradeSheets";
@@ -40,6 +41,7 @@ const emptyPurchase: PurchaseInput = {
   taxFee: 0,
   extraFee: 0,
   currency: "KRW",
+  exchangeRateKrw: null,
   marketplace: "포켓몬센터",
   memo: "",
 };
@@ -77,8 +79,25 @@ function getPurchaseInput(formData: FormData, marketplace: string): PurchaseInpu
     taxFee: numberFromForm(formData, "taxFee"),
     extraFee: numberFromForm(formData, "extraFee"),
     currency: stringFromForm(formData, "currency") as PurchaseInput["currency"],
+    exchangeRateKrw: null,
     marketplace,
     memo: stringFromForm(formData, "memo").trim(),
+  };
+}
+
+async function withPurchaseExchangeRate(input: PurchaseInput): Promise<PurchaseInput> {
+  if (input.currency === "KRW") {
+    return {
+      ...input,
+      exchangeRateKrw: null,
+    };
+  }
+
+  const exchangeRateKrw = await fetchExchangeRateToKrw(input.currency, input.purchaseDate);
+
+  return {
+    ...input,
+    exchangeRateKrw,
   };
 }
 
@@ -194,11 +213,19 @@ export function useTradeSheets({
       return;
     }
 
+    let inputWithExchangeRate: PurchaseInput;
+    try {
+      inputWithExchangeRate = await withPurchaseExchangeRate(input);
+    } catch {
+      setFormError("구매일 기준 환율을 가져오지 못했습니다. 잠시 후 다시 저장해 주세요.");
+      return;
+    }
+
     try {
       if (editingPurchase) {
-        await updatePurchase(editingPurchase.id, input);
+        await updatePurchase(editingPurchase.id, inputWithExchangeRate);
       } else {
-        await addPurchase(input);
+        await addPurchase(inputWithExchangeRate);
       }
 
       closeSheet();

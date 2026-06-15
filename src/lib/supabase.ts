@@ -13,6 +13,7 @@ export type PurchaseRow = {
   tax_fee: number;
   extra_fee: number;
   currency: string;
+  exchange_rate_krw?: number | null;
   marketplace: string;
   memo: string;
   created_at: string;

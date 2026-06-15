@@ -48,11 +48,23 @@ export function calculatePurchaseCosts(purchase: Purchase): PurchaseCost {
   };
 }
 
+function getExchangeRateKrw(purchase: Purchase) {
+  if (purchase.currency === "KRW") {
+    return 1;
+  }
+
+  return purchase.exchangeRateKrw ?? 1;
+}
+
+function convertPurchaseCostToKrw(value: number, purchase: Purchase) {
+  return roundMoney(value * getExchangeRateKrw(purchase));
+}
+
 export function calculateSaleResult(sale: Sale, purchase: Purchase): SaleResult {
   const { effectiveUnitCost } = calculatePurchaseCosts(purchase);
   const grossSales = sale.unitSalePrice * sale.quantity;
   const netSales = grossSales - sale.shippingFee - sale.platformFee;
-  const acquisitionCost = effectiveUnitCost * sale.quantity;
+  const acquisitionCost = convertPurchaseCostToKrw(effectiveUnitCost * sale.quantity, purchase);
   const netProfit = netSales - acquisitionCost;
 
   return {
@@ -118,7 +130,12 @@ export function calculateDashboardSummary(
   asOfDate = new Date().toISOString().slice(0, 10),
 ): DashboardSummary {
   const totalAcquisitionCost = purchases.reduce(
-    (sum, purchase) => sum + calculatePurchaseCosts(purchase).totalAcquisitionCost,
+    (sum, purchase) =>
+      sum +
+      convertPurchaseCostToKrw(
+        calculatePurchaseCosts(purchase).totalAcquisitionCost,
+        purchase,
+      ),
     0,
   );
   const inventory = calculateInventory(purchases, sales, asOfDate);
@@ -133,7 +150,7 @@ export function calculateDashboardSummary(
   return {
     totalAcquisitionCost: roundMoney(totalAcquisitionCost),
     currentInventoryCost: roundMoney(
-      inventory.reduce((sum, item) => sum + item.remainingCost, 0),
+      inventory.reduce((sum, item) => sum + convertPurchaseCostToKrw(item.remainingCost, item), 0),
     ),
     realizedNetProfit: roundMoney(realizedNetProfit),
     realizedProfitRate:
@@ -256,6 +273,7 @@ export function buildTradeLedger(
     quantity: sale.quantity,
     amount: sale.netSales,
     currency: "KRW" as const,
+    exchangeRateKrw: null,
     profit: sale.netProfit,
     memo: sale.memo,
   }));
@@ -268,6 +286,7 @@ export function buildTradeLedger(
     quantity: purchase.quantity,
     amount: calculatePurchaseCosts(purchase).totalAcquisitionCost,
     currency: purchase.currency,
+    exchangeRateKrw: purchase.exchangeRateKrw,
     profit: null,
     memo: purchase.memo,
   }));
